@@ -1,0 +1,20 @@
+# 排除 Python 相關的文件和資料夾
+*.pyc
+*.pyo
+__pycache__/
+
+# 排除虛擬環境資料夾
+.venv/
+env/
+
+
+# 排除測試資料夾
+tests/
+
+# 排除其他不需要的檔案
+urls.db
+.vscode/
+logs/
+.git/
+sqlite_test.py
+test.py

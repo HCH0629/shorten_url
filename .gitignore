@@ -1,0 +1,17 @@
+# 排除 Python 相關的文件和資料夾
+__pycache__/
+
+# 排除虛擬環境
+.venv/
+
+# 排除重要參數檔案
+.env
+
+# 排除測試資料夾
+tests/
+
+# 排除其他不需要的檔案
+urls.db
+.vscode/
+logs/
+test.py
