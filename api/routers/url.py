@@ -92,8 +92,9 @@ async def redirect_to_original(short_url: str, db_conn: Session = Depends(get_db
 
         # 檢查是否存在
         if not url_data:
-            return JSONResponse(status_code=404, content={"success": False, "reason": "短網址未找到"})
-            # return HTMLResponse(content="<html><body><h1>404 - Short URL not found </h1></body></html>",status_code=404)
+            # 改成用 HTMLResponse
+            return HTMLResponse(content="<html><body><h1>404 - Short URL not found </h1></body></html>",status_code=404)
+            # return JSONResponse(status_code=404, content={"success": False, "reason": "短網址未找到"})
             
         
         # 從 URL 實例中獲取原始網址和過期時間
@@ -110,9 +111,9 @@ async def redirect_to_original(short_url: str, db_conn: Session = Depends(get_db
         
         # 檢查是否過期
         if current_time > expiration_date:
-            # 改成用 JSONResponse
-            return JSONResponse(status_code=410, content={"success": False, "reason": "短網址已過期"})
-            # return HTMLResponse(content="<html><body><h1>410 - Short URL not found </h1></body></html>",status_code=410)
+            # 改成用 HTMLResponse
+            return HTMLResponse(content="<html><body><h1>410 - Short URL not found </h1></body></html>",status_code=410)
+            # return JSONResponse(status_code=410, content={"success": False, "reason": "短網址已過期"})
         
         
         # 成功返回訊息

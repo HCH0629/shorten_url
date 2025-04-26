@@ -103,7 +103,7 @@
       ```
     * `410 GONE`：`short_url` 已過期。
       ```json
-      // 如果通過 API 客戶端訪問，返回的響應體（瀏覽器會顯示標準的 404 頁面）
+      // 如果通過 API 客戶端訪問，返回的響應體（瀏覽器會顯示標準的 410 頁面）
       {
         "success": false,
         "reason": "Short URL was expired"
@@ -198,12 +198,17 @@
 
 
 ### 本機執行語法 (需先安裝相關套件和環境)
-uvicorn api.main:app --host 127.0.0.1 --port 8888
+  ```bash
+  uvicorn api.main:app --host 127.0.0.1 --port 8888
+  ```
 
 ### 基本啟動 container
-docker run -d -p 8000:8000 redirt_url
+  ```bash
+  docker run -d -p 8000:8000 redirt_url
+  ```
 
 ### 簡單壓測 
 * 測試在 60 秒後自動停止
-locust -f locustfile.py --headless -u 10 -r 1 --run-time 60s --host http://localhost:8000 --html report
-
+  ```bash 
+  locust -f locustfile.py --headless -u 10 -r 1 --run-time 60s --host http://localhost:8000 --html report
+  ```
