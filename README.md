@@ -98,7 +98,7 @@
       // 如果通過 API 客戶端訪問，返回的響應體（瀏覽器會顯示標準的 404 頁面）
       {
         "success": false,
-        "reason": "Short URL not found or expired"
+        "reason": "Short URL not found"
       }
       ```
     * `410 GONE`：`short_url` 已過期。

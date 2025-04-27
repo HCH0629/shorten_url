@@ -6,19 +6,21 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from sqlalchemy.orm import Session
-from api.database import get_db_conn
-from api import models  
+from api.database import get_db
+from api import models
 
 from dotenv import load_dotenv
 load_dotenv()
 
-DEFAULT_EXPIRATION_DAYS = os.getenv('DEFAULT_EXPIRATION_DAYS',30)
-SHORT_CODE_LENGTH = os.getenv('SHORT_CODE_LENGTH',8)
+DEFAULT_EXPIRATION_DAYS = int(os.getenv('DEFAULT_EXPIRATION_DAYS','30'))
+SHORT_CODE_LENGTH = int(os.getenv('SHORT_CODE_LENGTH','8'))
 
 
-# --- 短代碼生成 (Short Code Generation) ---
-def generate_short_code(length=SHORT_CODE_LENGTH, db_conn: Session = Depends(get_db_conn)):
-    """生成一個唯一的隨機短代碼（使用資料庫連線進行檢查）。"""
+# --- 短代碼生成 ---
+def generate_short_code(length=SHORT_CODE_LENGTH, db_conn: Session = Depends(get_db)):
+    """
+    生成一個唯一的隨機短代碼（資料庫連線進行檢查)
+    """
     tmp = 0 # 避免有重複short url造成無限迴圈
     while tmp < 10:
         # 簡單快速生成唯一的短碼
@@ -44,11 +46,11 @@ router = APIRouter(
 @router.post("/create_short_url", response_model=models.URLResponse, status_code=201, description='依據原網址建立短網址')
 async def create_short_url(
     url_input: models.URLInput, 
-    db_conn: Session  = Depends(get_db_conn)
+    db_conn: Session  = Depends(get_db)
     ):
 
     try:
-        # 構建短URL
+        # 建構短 URL        
         short_url = generate_short_code(db_conn=db_conn)
 
         # 計算過期時間 (30天後)
@@ -84,8 +86,11 @@ async def create_short_url(
 
 
 
-@router.get("/redirect_to_original")
-async def redirect_to_original(short_url: str, db_conn: Session = Depends(get_db_conn), description='重新定向到原網址'):
+@router.get("/redirect_to_original", description='重新定向到原網址')
+async def redirect_to_original(
+    short_url: str, 
+    db_conn: Session  = Depends(get_db),
+   ):
     try:
         # 查找短碼 使用 ORM 查詢資料
         url_data = db_conn.query(models.URL).filter(models.URL.short_url == short_url).first()
@@ -112,7 +117,7 @@ async def redirect_to_original(short_url: str, db_conn: Session = Depends(get_db
         # 檢查是否過期
         if current_time > expiration_date:
             # 改成用 HTMLResponse
-            return HTMLResponse(content="<html><body><h1>410 - Short URL not found </h1></body></html>",status_code=410)
+            return HTMLResponse(content="<html><body><h1>410 - Short URL was expired </h1></body></html>",status_code=410)
             # return JSONResponse(status_code=410, content={"success": False, "reason": "短網址已過期"})
         
         
@@ -121,4 +126,5 @@ async def redirect_to_original(short_url: str, db_conn: Session = Depends(get_db
             return RedirectResponse(status_code=302, url=original_url)
         
     except Exception as e:
-        return JSONResponse(status_code=500, content={"success": False, "reason": f"系統錯誤: {str(e)}"})
+        return HTMLResponse(content="<html><body><h1>500 - 系統錯誤 </h1></body></html>",status_code=500)
+        # return JSONResponse(status_code=500, content={"success": False, "reason": f"系統錯誤: {str(e)}"})

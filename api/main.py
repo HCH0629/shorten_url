@@ -11,50 +11,32 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from utils.logger import LoggingMiddleware, set_project_name
 from api.routers import url
+from api.database import db_manager, init_db
 
 DATABASE_PATH = os.environ.get('DATABASE_PATH', 'urls.db')
 PROJECT_NAME = 'REDIRT_URL'
 set_project_name(PROJECT_NAME)
 
-# --- 資料庫設定 (Database Setup) ---
-# 為了讓 User 立即見到效果建立一個 sqlite，但理論上是不需要這塊
-def init_db():
-    """初始化資料庫；如果資料表不存在則建立它。"""
-    try:
-        print(f"嘗試連接到數據庫：{DATABASE_PATH}")
-        # 使用不同的連線來初始化，避免與請求中的 get_db 衝突
-        conn = sqlite3.connect(DATABASE_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS urls (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                short_url TEXT UNIQUE NOT NULL,
-                original_url TEXT NOT NULL,
-                creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                expiration_date TIMESTAMP NOT NULL 
-            )
-        ''')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_short_code ON urls (short_url)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_expiration_date ON urls (expiration_date)')
-        conn.commit()
-        conn.close()
-        print("資料庫已初始化成功。")
-    except sqlite3.Error as e:
-        print(f"資料庫初始化失敗: {e}")
-        raise  # 拋出異常以便 lifespan 管理器知道啟動失敗
-# ---------------------------------------------------
+
 
 
 # FastAPI lifespan 管理器，用於應用程式啟動和關閉事件
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     # API啟動時執行的程式碼
-    print("API啟動中...")
+    print("API啟動")
+
+    # 初始化 database
     init_db()
     yield
+    
     # API關閉時執行的程式碼
-    print("API關閉中...")
+    print("API關閉")
+
+    # 關閉時清理 SQLAlchemy
+    if db_manager.engine:
+        print("關閉資料庫引擎連接池")
+        db_manager.engine.dispose()
 
 
 
@@ -87,7 +69,6 @@ app.add_exception_handler(RateLimitExceeded, custom_rate_limit_exceeded_handler)
 # 將 SlowAPIMiddleware 添加到應用程式，使其生效
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(LoggingMiddleware)                   
-
 
 
 
