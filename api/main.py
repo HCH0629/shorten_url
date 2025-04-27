@@ -2,7 +2,7 @@ import os
 import sqlite3
 import contextlib
 
-from fastapi import FastAPI, Request  
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -58,7 +58,7 @@ app.state.limiter = limiter
 async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
     # 自定義處理過程
     return JSONResponse(
-        status_code=429,
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content={"error": f"Rate limit exceeded. Please try again later. Reason: {exc.detail}"}
     )
 

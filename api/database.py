@@ -62,7 +62,7 @@ db_manager = SQLiteManager(DATABASE_URL)
 try:
     db_manager.create_engine() # 載入 class 建立引擎和 SessionLocal
 except RuntimeError as e:
-    raise HTTPException(status_code=500, detail=f"無法在啟動時建立資料庫引擎: {e}")
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"無法在啟動時建立資料庫引擎: {e}")
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -78,14 +78,14 @@ def get_db() -> Generator[Session, None, None]:
         db = db_manager.SessionLocal()
         yield db # 給 api 使用
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"DB Session Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"DB Session Error: {e}")
     
     finally:
         if db is not None:
             try:
                 db.close()              
             except Exception as e: # 檢查關閉時的錯誤
-                return HTTPException(status_code=500, detail=f"DB Session Error: {e}")
+                return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"DB Session Error: {e}")
 
 # --- 初始化資料庫 ---
 def init_db():
