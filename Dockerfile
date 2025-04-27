@@ -42,6 +42,11 @@ ENV DEFAULT_EXPIRATION_DAYS=30
 ENV DATABASE_PATH=/redirt_url/urls.db 
 ENV MAX_URL_LENGTH = 2048
 
+# 如果有用到 redis 的話
+ENV REDIS_HOST = redis
+ENV REDIS_PORT = 6379
+ENV REDIS_DB = 0
+
 # mount 在 redirt_url
 VOLUME /redirt_url 
 

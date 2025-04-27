@@ -15,3 +15,5 @@ urls.db
 .vscode/
 logs/
 test.py
+docker-compose.yml
+sqlite_test.py

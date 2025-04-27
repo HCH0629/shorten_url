@@ -50,7 +50,7 @@ class RedisManager:
         if self.connection:
             try:
                 self.connection.close()
-                print("Redis 連線關閉。")
+                print("Redis 連線關閉")
                 self.connection = None
             except Exception as e:
                 print(f"關閉 Redis 連線時發生錯誤: {e}")
@@ -67,10 +67,9 @@ except RuntimeError as e:
 # --- 提供 Redis 連線的依賴函數 (使用 RedisManager) ---
 def get_redis() -> Generator[Optional[redis.Redis], None, None]:
     """FastAPI 依賴項，從 RedisManager 獲取 Redis 連線實例。"""
-    print("--- get_redis START ---")
     conn = redis_manager.get_connection()
     if conn is None:
-        print("警告: Redis 連線不可用 (可能是啟動失敗)。")
+        print("Redis 連線不可用")
         yield None # 返回 None，讓路由函數處理
     else:
         try:

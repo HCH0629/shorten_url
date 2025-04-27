@@ -58,13 +58,12 @@ async def create_short_url(
         short_url = generate_short_code(db_conn=db_conn)
 
         # 計算過期時間 (30天後)
-        expiration_date = datetime.now(timezone.utc) + timedelta(seconds=1)
-        # expiration_date = datetime.now(timezone.utc) + timedelta(days=DEFAULT_EXPIRATION_DAYS)
+        expiration_date = datetime.now() + timedelta(days=DEFAULT_EXPIRATION_DAYS)
 
         # 將 HttpUrl 轉換為字串
         original_url_str = str(url_input.original_url)
-        
 
+        
         # 創建 Url 實例並將資料插入資料庫 
         new_url = models.URL(
             short_url=short_url,
@@ -72,22 +71,25 @@ async def create_short_url(
             expiration_date=expiration_date
         )
 
-        db_conn.add(new_url)  # 添加實例到會話
-        db_conn.commit()  # 提交變更
+        db_conn.add(new_url)
+        db_conn.commit()
 
 
-        # --- 寫入快取 ---
+        # --- 寫入 Redis ---
         if redis_conn:
             try:
                 # 使用 set 方法，key 是 short_url，value 是 original_url
-                remaining_seconds = (expiration_date - datetime.now(timezone.utc)).total_seconds()
-                redis_conn.set(short_url, original_url_str, ex=remaining_seconds)
-                # print(f"快取寫入成功: {short_url} -> {original_url_str} (TTL: {remaining_seconds}s)")
+                remaining_seconds = int((expiration_date - datetime.now()).total_seconds())
+                
+                # 因為 ex 一定要是正整數 所以這邊再多一個判斷
+                if remaining_seconds > 0:
+                    redis_conn.set(short_url, original_url_str, ex=remaining_seconds)
+
             except redis.RedisError as e:
-                # 如果快取寫入失敗，只記錄錯誤，不影響主要流程，在不使用 docker compose 也可以正常運行
-                print(f"Redis 快取寫入失敗 ({short_url}): {e}")
+                # 如果 Redis 寫入失敗，只記錄錯誤，不影響主要流程，在不使用 Redis 也可以正常運行
+                print(f"Redis 寫入失敗 {e}")
         else:
-            print(f"Redis 連線不可用，未寫入快取 ({short_url})")
+            print(f"未寫入快取")
 
 
         return models.URLResponse(
@@ -112,75 +114,60 @@ async def redirect_to_original(
     db_conn: Session  = Depends(get_db),
     redis_conn: Optional[redis.Redis] = Depends(get_redis)
    ):
-    
-
-    # --- 1. 檢查快取 ---
-    print(f"檢查快取: {short_url}")
-    if redis_conn:
-        try:
-            cached_original_url = redis_conn.get(short_url)
-            if cached_original_url:
-                print(f"快取命中: {short_url}")
-                # 直接從快取重定向
-                return RedirectResponse(status_code=status.HTTP_302_FOUND, url=cached_original_url)
-            else:
-                print(f"快取未命中: {short_url}")
-        except redis.RedisError as e:
-            print(f"讀取 Redis 快取錯誤 ({short_url}): {e}")
-            # 快取讀取失敗，繼續往下查詢資料庫
-
-    else:
-        print(f"Redis 連線不可用，跳過快取檢查 ({short_url})")
-
-    # --- 2. 快取未命中或 Redis 不可用，查詢資料庫 ---
-    
-    print(f"從資料庫查找: {short_url}")
     try:
-        url_data = db_conn.query(models.URL).filter(models.URL.short_url == short_url).first()
+        # --- 檢查 Redis ---
+        if redis_conn:
+            try:
+                cached_original_url = redis_conn.get(short_url)
+                if cached_original_url:
+                    print(f"Redis 有: {short_url}")
+                    # 直接從 Redis 重定向
+                    return RedirectResponse(status_code=status.HTTP_302_FOUND, url=cached_original_url)
+                else:
+                    print(f"Redis 未出現: {short_url}")
 
-        # --- 3. 處理資料庫查詢結果 ---
-        if not url_data:
-            print(f"資料庫未找到: {short_url}")
-            return HTMLResponse(content="<html><body><h1>404 - Short URL not found</h1></body></html>", status_code=status.HTTP_404_NOT_FOUND)
+            except redis.RedisError as e:
+                print(f"讀取 Redis 快取錯誤 ({short_url}): {e}")
+                # Redis 讀取失敗，繼續往下查詢資料庫
 
-        # --- 4. 資料庫找到，獲取資料 ---
-        original_url = url_data.original_url
-        expiration_date = url_data.expiration_date # 這是從 DB 來的 datetime 物件或字串
-        print(f"資料庫找到: {short_url} -> {original_url}, DB Expires: {expiration_date}")
+        else:
+            print(f"跳過 Redis 檢查")
 
-
-        # 5. 將從資料庫找到的結果寫入快取
-        # 原本是要寫回快取 不過我直接將 redis TTL 同步 sql 的 expiredate 
-        # 缺點是過期的如果被查詢就會一直去 DB 查詢
-
-
+    
+        # --- Redis 未出現或 Redis 不可用，查詢資料庫 ---
         # 查找短碼 使用 ORM 查詢資料
         url_data = db_conn.query(models.URL).filter(models.URL.short_url == short_url).first()
 
         # 檢查是否存在
         if not url_data:
-            # 改成用 HTMLResponse
-            return HTMLResponse(content="<html><body><h1>404 - Short URL not found </h1></body></html>",status_code=status.HTTP_404_NOT_FOUND)
-            # return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"success": False, "reason": "短網址未找到"})
-            
-        
+            return HTMLResponse(content="<html><body><h1>404 - Short URL not found</h1></body></html>", status_code=status.HTTP_404_NOT_FOUND)
+
         # 從 URL 實例中獲取原始網址和過期時間
         original_url = url_data.original_url
         expiration_date = url_data.expiration_date
-
-
-        # 將 expiration_date 轉換為 datetime 物件
-        if isinstance(expiration_date, str):
-            expiration_date = datetime.fromisoformat(expiration_date.replace("Z", "+00:00"))  # 處理 Z 時區標記
         
-        # 獲取當下時間，不過先暫時不處理時區問題 -> 晚點再回來處理 應該要使用 pytz
+        # 將從資料庫找到的結果寫入快取，如果 redis 不明原因暫時損毀後，可以再次寫回 (但目前實際上 如果 redis 遇到意外 shutdown 以現在的 code 是要直接重啟 pod or container)
+        if redis_conn:
+            
+            try:
+                remaining_seconds = int((expiration_date - datetime.now()).total_seconds())
+                
+                if remaining_seconds > 0:
+                    redis_conn.set(short_url, original_url, ex=remaining_seconds)
+
+            except redis.RedisError as e:
+                # 如果快取寫入失敗，只記錄錯誤，不影響主要流程，在不使用 Redis 也可以正常運行
+                print(f"Redis 快取寫入失敗 ({short_url}): {e}")
+
+        
+
+        
+        # 獲取當下時間，先暫時不處理時區問題
         current_time = datetime.now()
         
-        # 檢查是否過期
+        # 檢查是否過期 (這邊建議先把 F12 -> network -> 停用快取勾起來)
         if current_time > expiration_date:
-            # 改成用 HTMLResponse
             return HTMLResponse(content="<html><body><h1>410 - Short URL was expired </h1></body></html>",status_code=status.HTTP_410_GONE)
-            # return JSONResponse(status_code=status.HTTP_410_GONE, content={"success": False, "reason": "短網址已過期"})
         
         
         # 成功返回訊息
@@ -189,4 +176,3 @@ async def redirect_to_original(
         
     except Exception as e:
         return HTMLResponse(content="<html><body><h1>500 - 系統錯誤 </h1></body></html>",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        # return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"success": False, "reason": f"系統錯誤: {str(e)}"})
