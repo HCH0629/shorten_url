@@ -10,7 +10,7 @@ from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from sqlalchemy.orm import Session
 from api import models
 from api.database import get_db
-from api.cache import get_redis, REDIS_CACHE_TTL 
+from api.cache import get_redis 
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -58,7 +58,8 @@ async def create_short_url(
         short_url = generate_short_code(db_conn=db_conn)
 
         # 計算過期時間 (30天後)
-        expiration_date = datetime.now(timezone.utc) + timedelta(days=DEFAULT_EXPIRATION_DAYS)
+        expiration_date = datetime.now(timezone.utc) + timedelta(seconds=1)
+        # expiration_date = datetime.now(timezone.utc) + timedelta(days=DEFAULT_EXPIRATION_DAYS)
 
         # 將 HttpUrl 轉換為字串
         original_url_str = str(url_input.original_url)
@@ -79,9 +80,9 @@ async def create_short_url(
         if redis_conn:
             try:
                 # 使用 set 方法，key 是 short_url，value 是 original_url
-                # ex=REDIS_CACHE_TTL 設定 Redis 中的過期時間 (秒)
-                redis_conn.set(short_url, original_url_str, ex=REDIS_CACHE_TTL)
-                # print(f"快取寫入成功: {short_url} -> {original_url_str} (TTL: {REDIS_CACHE_TTL}s)")
+                remaining_seconds = (expiration_date - datetime.now(timezone.utc)).total_seconds()
+                redis_conn.set(short_url, original_url_str, ex=remaining_seconds)
+                # print(f"快取寫入成功: {short_url} -> {original_url_str} (TTL: {remaining_seconds}s)")
             except redis.RedisError as e:
                 # 如果快取寫入失敗，只記錄錯誤，不影響主要流程，在不使用 docker compose 也可以正常運行
                 print(f"Redis 快取寫入失敗 ({short_url}): {e}")
@@ -148,13 +149,9 @@ async def redirect_to_original(
         print(f"資料庫找到: {short_url} -> {original_url}, DB Expires: {expiration_date}")
 
 
-        # --- 5. 將從資料庫找到的結果寫入快取 ---
-        if redis_conn:
-            try:
-                redis_conn.set(short_url, original_url, ex=REDIS_CACHE_TTL)
-                print(f"資料庫結果已寫入快取: {short_url} (TTL: {REDIS_CACHE_TTL}s)")
-            except redis.RedisError as e:
-                print(f"警告：寫入 Redis 快取失敗 ({short_url}): {e}")
+        # 5. 將從資料庫找到的結果寫入快取
+        # 原本是要寫回快取 不過我直接將 redis TTL 同步 sql 的 expiredate 
+        # 缺點是過期的如果被查詢就會一直去 DB 查詢
 
 
         # 查找短碼 使用 ORM 查詢資料
