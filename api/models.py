@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from dotenv import load_dotenv
 load_dotenv()
 
-MAX_URL_LENGTH = int(os.getenv('MAX_URL_LENGTH','2048'))
+MAX_URL_LENGTH = int(os.getenv('MAX_URL_LENGTH',2048))
 
 Base = declarative_base()
 

@@ -15,8 +15,8 @@ from api.cache import get_redis
 from dotenv import load_dotenv
 load_dotenv()
 
-DEFAULT_EXPIRATION_DAYS = int(os.getenv('DEFAULT_EXPIRATION_DAYS','30'))
-SHORT_CODE_LENGTH = int(os.getenv('SHORT_CODE_LENGTH','8'))
+DEFAULT_EXPIRATION_DAYS = int(os.getenv('DEFAULT_EXPIRATION_DAYS',30))
+SHORT_CODE_LENGTH = int(os.getenv('SHORT_CODE_LENGTH',8))
 
 
 # --- 短代碼生成 ---
