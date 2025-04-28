@@ -25,9 +25,9 @@ RUN wget https://www.python.org/ftp/python/3.11.3/Python-3.11.3.tgz && \
     rm Python-3.11.3.tgz
 
 
-RUN mkdir /redirt_url
-COPY . /redirt_url/
-WORKDIR /redirt_url/
+RUN mkdir /shorten_url
+COPY . /shorten_url/
+WORKDIR /shorten_url/
 
 # 複製需求文件
 COPY requirements.txt .
@@ -39,7 +39,7 @@ ENV LANG=C.UTF-8
 ENV TZ=Asia/Taipei
 ENV SHORT_CODE_LENGTH=8
 ENV DEFAULT_EXPIRATION_DAYS=30
-ENV DATABASE_PATH=/redirt_url/urls.db 
+ENV DATABASE_PATH=/shorten_url/urls.db 
 ENV MAX_URL_LENGTH=2048
 
 # 如果有用到 redis 的話
@@ -47,8 +47,8 @@ ENV REDIS_HOST=redis
 ENV REDIS_PORT=6379
 ENV REDIS_DB=0
 
-# mount 在 redirt_url
-VOLUME /redirt_url 
+# mount 在 shorten_url
+VOLUME /shorten_url 
 
 RUN ln -s /usr/local/bin/python3.11 /usr/local/bin/python3 && \
     ln -s /usr/local/bin/python3.11 /usr/local/bin/python && \

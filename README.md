@@ -200,16 +200,16 @@
     * 執行以下命令來啟動容器：
         ```bash
         docker run -d -p 8000:8000 --name shorturl-app \
-                   -v redirt_url:/redirt_url \
-                   danielhch/redirt_url:latest
+                   -v shorten_url:/shorten_url \
+                   danielhch/shorten_url:latest
         ```
     * **說明**：
         * `docker run`：創建並啟動容器。
         * `-d`：將容器運行在背景。
         * `-p 8000:8000`：將主機的 8000 端口映射到容器的 8000 端口（這是 Uvicorn 監聽的端口）。如果 8000 端口已經被使用，可以更改主機端口（例如，`-p 8001:8000`）。
         * `--name shorturl-app`：為容器分配一個名稱（名稱可以隨意取）。
-        * `-v redirt_url:/redirt_url`：**（持久化數據）** 這將創建或使用一個名為 `redirt_url` 的 Docker 命名卷，並將其掛載到容器內的 `/redirt_url` 目錄。SQLite 數據庫文件 (`urls.db`) 存儲在 `/redirt_url` 目錄中，這樣即使停止並移除容器，數據仍然可以持久化。Docker 管理該卷。
-        * `danielhch/redirt_url:latest`：此應用程式的名稱 (latest 為版本號，其他版本也可以使用)
+        * `-v shorten_url:/shorten_url`：**（持久化數據）** 這將創建或使用一個名為 `shorten_url` 的 Docker 命名卷，並將其掛載到容器內的 `/shorten_url` 目錄。SQLite 數據庫文件 (`urls.db`) 存儲在 `/shorten_url` 目錄中，這樣即使停止並移除容器，數據仍然可以持久化。Docker 管理該卷。
+        * `danielhch/shorten_url:latest`：此應用程式的名稱 (latest 為版本號，其他版本也可以使用)
 
 4.  **訪問服務**：
     * 現在 API 服務已經運行，可以訪問 `http://127.0.0.1:8000`。
@@ -243,7 +243,7 @@
         ```
 
 7.  **重啟容器**：
-    * 重啟已停止的容器（它會重新使用 `redirt_url` 卷）：
+    * 重啟已停止的容器（它會重新使用 `shorten_url` 卷）：
         ```bash
         docker start shorturl-app
         ```
@@ -253,7 +253,7 @@
         ```bash
         docker rm shorturl-app
         ```
-    * *注意：* 移除容器不會刪除命名卷（`redirt_url`）。數據仍然安全。如果不再需要數據，可以刪除該卷：`docker volume rm redirt_url`。
+    * *注意：* 移除容器不會刪除命名卷（`shorten_url`）。數據仍然安全。如果不再需要數據，可以刪除該卷：`docker volume rm shorten_url`。
 
 ---
 
@@ -265,7 +265,7 @@
 
 ### 基本啟動 container
   ```bash
-  docker run -d -p 8000:8000 redirt_url
+  docker run -d -p 8000:8000 shorten_url
   ```
 
 ### 簡單壓測 
