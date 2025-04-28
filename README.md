@@ -125,6 +125,67 @@
       ```
 
 ---
+## 使用指南：使用 Docker Compose 運行
+
+### 前提條件：
+
+* 您的系統已經安裝 Docker 和 Docker Compose。如果尚未安裝，可以參考 [Docker 安裝指南](https://docs.docker.com/get-docker/) 和 [Docker Compose 安裝指南](https://docs.docker.com/compose/install/)。
+
+### 步驟：
+
+1. **下載專案並進入專案目錄**：
+    ```bash
+    git clone https://github.com/HCH0629/shorten_url
+    cd shorturl-api
+    ```
+  
+2. **啟動 Docker Compose**：
+    使用 Docker Compose 來啟動所有必要的服務，包括應用程式和資料庫。
+    ```bash
+    docker-compose up -d
+    ```
+    * **說明**：
+        * `docker-compose up -d`：在背景模式下啟動所有服務。
+        * `-d`：讓容器在後台運行。
+
+3. **檢查容器狀態**：
+    確保所有服務運行正常。
+    ```bash
+    docker-compose ps
+    ```
+
+4. **訪問服務**：
+    * 服務將在 `http://localhost:8000` 提供。
+    * 您可以在瀏覽器中進行 API 測試，或者使用 `curl` 或 Postman 進行交互。
+
+    ```bash
+    curl -X 'POST' \
+        'http://127.0.0.1:8000/create_short_url' \
+        -H 'accept: application/json' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "original_url": "https://example.com/"
+        }'
+    ```
+
+5. **查看日誌**：
+    查看容器的運行日誌，檢查是否有任何錯誤或警告。
+    ```bash
+    docker-compose logs -f
+    ```
+
+6. **停止服務**：
+    當您不再需要服務時，使用以下命令停止所有服務：
+    ```bash
+    docker-compose down
+    ```
+
+### 配置文件
+
+在專案根目錄下，您應該能看到以下配置文件：
+
+* **docker-compose.yml**：此文件定義了服務、網絡、資料庫卷等配置。
+---
 
 ## 使用指南：使用 Docker 運行
 
@@ -135,7 +196,7 @@
 * 您的系統上已安裝並正在執行 Docker。(如為 Windows 可直接安裝 Docker Desktop)
 
 **步驟**：
-1.  **下載 Docker Images**：
+1.  **下載 Docker Images 並啟動**：
     * 執行以下命令來啟動容器：
         ```bash
         docker run -d -p 8000:8000 --name shorturl-app \
@@ -194,7 +255,7 @@
         ```
     * *注意：* 移除容器不會刪除命名卷（`redirt_url`）。數據仍然安全。如果不再需要數據，可以刪除該卷：`docker volume rm redirt_url`。
 
-
+---
 
 
 ### 本機執行語法 (需先安裝相關套件和環境)

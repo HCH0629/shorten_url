@@ -1,0 +1,40 @@
+version: '3.8' 
+
+services:
+  # Redis 服務
+  redis:
+    image: redis:alpine
+    container_name: redis # 容器名稱
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+
+  # FastAPI API 服務
+  api:
+    image: danielhch/redirt_url:redis_v5
+    container_name: api_container # 容器名稱
+    ports:
+      # 將主機的 8000 端口映射到容器的 8000 端口 (與 Dockerfile 暴露的 port 要一樣)
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis # 上面服務名稱叫什麼這邊就一樣的
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+    depends_on:
+      # 確保 Redis 服務先於 API
+      - redis
+    networks:
+      # 指定使用的網路
+      - app_network
+
+
+networks:
+  app_network:
+    driver: bridge # 使用預設的 bridge
+
+# 用於 Redis 持久化
+volumes:
+  redis_data:

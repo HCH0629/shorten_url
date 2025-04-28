@@ -18,4 +18,3 @@ logs/
 .git/
 sqlite_test.py
 test.py
-docker-compose.yml
