@@ -14,7 +14,7 @@ services:
 
   # FastAPI API 服務
   api:
-    image: danielhch/redirt_url:redis_v5
+    image: danielhch/redirt_url:latest
     container_name: api_container # 容器名稱
     ports:
       # 將主機的 8000 端口映射到容器的 8000 端口 (與 Dockerfile 暴露的 port 要一樣)

@@ -16,7 +16,7 @@
 
 ## API 文檔
 
-該 API 服務於容器運行的主機根目錄下提供（例如：`http://localhost:8000`）。
+該 API 服務於容器運行的主機根目錄下提供（例如：`http://127.0.0.1:8000`）。
 
 ---
 
@@ -138,7 +138,7 @@
     git clone https://github.com/HCH0629/shorten_url
     cd shorturl-api
     ```
-  
+
 2. **啟動 Docker Compose**：
     使用 Docker Compose 來啟動所有必要的服務，包括應用程式和資料庫。
     ```bash
@@ -155,7 +155,7 @@
     ```
 
 4. **訪問服務**：
-    * 服務將在 `http://localhost:8000` 提供。
+    * 服務將在 `http://127.0.0.1:8000` 提供。
     * 您可以在瀏覽器中進行 API 測試，或者使用 `curl` 或 Postman 進行交互。
 
     ```bash
@@ -201,7 +201,7 @@
         ```bash
         docker run -d -p 8000:8000 --name shorturl-app \
                    -v redirt_url:/redirt_url \
-                   danielhch/redirt_url:redis_v5
+                   danielhch/redirt_url:latest
         ```
     * **說明**：
         * `docker run`：創建並啟動容器。
@@ -209,12 +209,12 @@
         * `-p 8000:8000`：將主機的 8000 端口映射到容器的 8000 端口（這是 Uvicorn 監聽的端口）。如果 8000 端口已經被使用，可以更改主機端口（例如，`-p 8001:8000`）。
         * `--name shorturl-app`：為容器分配一個名稱（名稱可以隨意取）。
         * `-v redirt_url:/redirt_url`：**（持久化數據）** 這將創建或使用一個名為 `redirt_url` 的 Docker 命名卷，並將其掛載到容器內的 `/redirt_url` 目錄。SQLite 數據庫文件 (`urls.db`) 存儲在 `/redirt_url` 目錄中，這樣即使停止並移除容器，數據仍然可以持久化。Docker 管理該卷。
-        * `danielhch/redirt_url:redis_v5`：此應用程式的名稱 (redis_v5 為版本號，其他版本也可以使用)
+        * `danielhch/redirt_url:latest`：此應用程式的名稱 (latest 為版本號，其他版本也可以使用)
 
 4.  **訪問服務**：
-    * 現在 API 服務已經運行，可以訪問 `http://localhost:8000`。
-    * **API 文檔**：`http://localhost:8000/docs` 可查看此 API 相關資訊。
-    * **創建短網址**：向 `http://localhost:8000/create_short_url` 發送 `POST` 請求，並附上 JSON 載荷（使用 `curl`或 Postman 其他熟悉的工具）。
+    * 現在 API 服務已經運行，可以訪問 `http://127.0.0.1:8000`。
+    * **API 文檔**：`http://127.0.0.1:8000/docs` 可查看此 API 相關資訊。
+    * **創建短網址**：向 `http://127.0.0.1:8000/create_short_url` 發送 `POST` 請求，並附上 JSON 載荷（使用 `curl`或 Postman 其他熟悉的工具）。
         ```bash
         curl -X 'POST' \
             'http://127.0.0.1:8888/url/create_short_url' \
@@ -224,7 +224,7 @@
             "original_url": "https://example.com/"
           }'
         ```
-    * **使用短網址**：如果上面的請求返回 `{"short_url": "http://localhost:8000/qwerasdf", ...}`，可以在瀏覽器中打開 `http://localhost:8000/qwerasdf`，並將會重定向到 `https://example.com`。
+    * **使用短網址**：如果上面的請求返回 `{"short_url": "http://127.0.0.1:8000/qwerasdf", ...}`，可以在瀏覽器中打開 `http://127.0.0.1:8000/qwerasdf`，並將會重定向到 `https://example.com`。
 
 5.  **查看日誌**：
     * 要查看應用程式日誌（請求、錯誤等）：
@@ -271,5 +271,5 @@
 ### 簡單壓測 
 * 測試在 60 秒後自動停止
   ```bash 
-  locust -f locustfile.py --headless -u 10 -r 1 --run-time 60s --host http://localhost:8000 --html report
+  locust -f locustfile.py --headless -u 10 -r 1 --run-time 60s --host http://127.0.0.1:8000 --html report
   ```
