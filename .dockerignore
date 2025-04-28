@@ -18,3 +18,4 @@ logs/
 .git/
 sqlite_test.py
 test.py
+README.md

@@ -136,7 +136,7 @@
 1. **下載專案並進入專案目錄**：
     ```bash
     git clone https://github.com/HCH0629/shorten_url
-    cd shorturl-api
+    cd shorten_url
     ```
 
 2. **啟動 Docker Compose**：
